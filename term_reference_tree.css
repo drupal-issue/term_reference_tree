@@ -1,69 +1,27 @@
-.item-list .field-widget-term-reference-tree ul,
-.block .field-widget-term-reference-tree ul,
-.field-widget-term-reference-tree ul
-{
-  list-style-type: none; 
-  margin-top: 0;
-  margin-bottom: 0;
-  margin-left: 0;
+.form-type-checkbox-tree li{
+ list-style-type:none;
 }
-
-.item-list .field-widget-term-reference-tree ul ul,
-.block .field-widget-term-reference-tree ul ul,
-.field-widget-term-reference-tree ul ul
-{
-  margin-left: 1.5em;
+.form-type-checkbox-tree input{
+ margin:0 5px;
+ font-size:6px;
 }
-
-.item-list .field-widget-term-reference-tree ul .form-item,
-.block .field-widget-term-reference-tree ul .form-item,
-.field-widget-term-reference-tree ul .form-item {
-  margin: 0;
-  padding: 0;
+.checkbox_tree_plus{
+ padding:8px 0;
+  width:20px;
+  height:20px;
+  display:block;
+  background-repeat:no-repeat;
+  background-position:50% 50%;
 }
-
-.term-reference-tree-button,
-.no-term-reference-tree-button {
-  width: 16px;
-  height: 16px;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 4px;
+.checkbox_tree_plus.plus,.checkbox_tree_plus.minus{
+ cursor:pointer;
 }
-
-.term-reference-tree-button {
-  background-image: url('images/bullet_toggle_minus.png');
+.checkbox_tree_plus.plus{
+  background-image:url('images/plus.gif');
 }
-
-.no-term-reference-tree-button {
-  background-color: #ddd;
+.checkbox_tree_plus.minus{
+  background-image:url('images/minus.gif');
 }
-
-.term-reference-tree-button.term-reference-tree-collapsed {
-  background-image: url('images/bullet_toggle_plus.png');
-}
-
-.field-widget-term-reference-tree .form-item {
-  display: inline-block;
-}
-
-.field-widget-term-reference-tree .disabled {
-  opacity: .5;
-}
-
-.field-widget-term-reference-tree .parent-term {
-  display: inline-block;
-  font-weight: bold;
-}
-
-.form-type-checkbox-tree .error {
-  background-image: none;
-  border: 2px solid red;
-  padding: 3px;
-}
-
-.region-content ul.term-reference-tree-level,
-.term-reference-tree-level
-{
-  padding: 0;
+.checkbox_tree_plus.leaf{
+  background-image:url('images/leaf.gif');
 }
