@@ -148,10 +148,17 @@ function theme_options_tree_term($variables){
     )
   );
   $variables['tid'] = $variables['term']->tid;
+  $variables['link'] = TRUE;
+  $display_text = check_plain($variables['term']->name);
+  if(isset($variables['link']) && $variables['link']){
+    $uri = taxonomy_term_uri($variables['term']);
+    $display_text = l($display_text, $uri['path']);    
+  }
+  //entity_extract_ids($entity_type, $entity)
   return '<li>' . theme('options_tree_expand_button', array(
     'field_id' => $variables['element']['#id'],
     'term' => $variables['term']
-  )) . '<label>' . theme('checkbox', $checkbox_variables) . check_plain($variables['term']->name) . '</label>' . //theme('options_tree', $variables) . 
+  )) . '<label>' . theme('checkbox', $checkbox_variables) . $display_text . '</label>' . //theme('options_tree', $variables) . 
 '</li>';
 }
 

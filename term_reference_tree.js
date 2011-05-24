@@ -1,7 +1,7 @@
 (function($) {
   Drupal.behaviors.term_reference_tree = {
     attach: function(context, settings){
-      $('.checkbox_tree_plus', context).click(function(){
+      $('.options_tree_plus', context).click(function(){
         if($(this).hasClass('plus')){
           if($(this).siblings('ul').first().length){
             $(this).siblings('ul').first().show();
