@@ -33,7 +33,7 @@ function term_reference_tree_page_callback($term, $element_id){
       '#id' => $element_id
     )
   );
-  return theme('checkbox_tree', $variables);
+  return theme('options_tree', $variables);
 }
 
 /**
@@ -66,10 +66,10 @@ function term_reference_tree_field_widget_info(){
  */
 function term_reference_tree_element_info(){
   $types = array(
-    'checkbox_tree' => array(
+    'options_tree' => array(
       '#input' => true,
       '#theme' => array(
-        'checkbox_tree'
+        'options_tree'
       ),
       '#pre_render' => array(
         'form_pre_render_conditional_form_element'
@@ -84,15 +84,15 @@ function term_reference_tree_element_info(){
  */
 function term_reference_tree_theme(){
   return array(
-    'checkbox_tree' => array(
+    'options_tree' => array(
       'render element' => 'element'
     ),
-    'checkbox_tree_term' => array(
+    'options_tree_term' => array(
       'term' => 'term',
       'tid' => 'tid',
       'vid' => 'vid'
     ),
-    'checkbox_tree_expand_button' => array(
+    'options_tree_expand_button' => array(
       'field_id' => 'field_id',
       'term' => 'term'
     )
@@ -102,11 +102,11 @@ function term_reference_tree_theme(){
 /**
  * 
  */
-function theme_checkbox_tree_expand_button($variables){
+function theme_options_tree_expand_button($variables){
   // Check if the term has any children, if so, we need to return a plus, else
   // we return a blank.
   $children = taxonomy_get_children($variables['term']->tid, $variables['term']->vid);
-  $output = '<div id="' . $variables['field_id'] . '__' . $variables['term']->tid . '" class="checkbox_tree_plus ';
+  $output = '<div id="' . $variables['field_id'] . '__' . $variables['term']->tid . '" class="options_tree_plus ';
   if(count($children)){
     $output .= 'plus';
   }else{
@@ -116,13 +116,13 @@ function theme_checkbox_tree_expand_button($variables){
 }
 
 /**
- * Returns HTML for a checkbox_tree form element.
+ * Returns HTML for a options_tree form element.
  *
  * @param $variables
  * An associative array containing:
  * - element: An associative array containing the properties of the element.
  */
-function theme_checkbox_tree($variables){
+function theme_options_tree($variables){
   if(!isset($variables['vid'])){
     $vocabulary = taxonomy_vocabulary_machine_name_load($variables['element']['#vocabulary']);
     $variables['vid'] = $vocabulary->vid;
@@ -134,12 +134,12 @@ function theme_checkbox_tree($variables){
   $output = "<ul>";
   foreach($root_terms as $term){
     $variables['term'] = $term;
-    $output .= theme('checkbox_tree_term', $variables);
+    $output .= theme('options_tree_term', $variables);
   }
   return $output . '</ul>';
 }
 
-function theme_checkbox_tree_term($variables){
+function theme_options_tree_term($variables){
   $checkbox_variables = array(
     'element' => array(
       '#id' => $variables['element']['#id'] . '-' . $variables['term']->tid,
@@ -148,10 +148,10 @@ function theme_checkbox_tree_term($variables){
     )
   );
   $variables['tid'] = $variables['term']->tid;
-  return '<li>' . theme('checkbox_tree_expand_button', array(
+  return '<li>' . theme('options_tree_expand_button', array(
     'field_id' => $variables['element']['#id'],
     'term' => $variables['term']
-  )) . '<label>' . theme('checkbox', $checkbox_variables) . check_plain($variables['term']->name) . '</label>' . //theme('checkbox_tree', $variables) . 
+  )) . '<label>' . theme('checkbox', $checkbox_variables) . check_plain($variables['term']->name) . '</label>' . //theme('options_tree', $variables) . 
 '</li>';
 }
 
@@ -166,7 +166,7 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
     $default_value[] = $item['tid'];
   }
   $element += array(
-    '#type' => 'checkbox_tree',
+    '#type' => 'options_tree',
     '#attached' => array(
       'css' => array(
         drupal_get_path('module', 'term_reference_tree') . '/term_reference_tree.css'
