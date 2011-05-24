@@ -3,25 +3,25 @@
 }
 .form-type-checkbox-tree input{
  margin:0 5px;
- font-size:6px;
+}
+.form-type-checkbox-tree label{
 }
 .checkbox_tree_plus{
  padding:8px 0;
-  width:20px;
-  height:20px;
-  display:block;
-  background-repeat:no-repeat;
-  background-position:50% 50%;
+ width:11px;
+ height:11px;
+ background-repeat:no-repeat;
+ background-position:50% 50%;
 }
 .checkbox_tree_plus.plus,.checkbox_tree_plus.minus{
  cursor:pointer;
 }
 .checkbox_tree_plus.plus{
-  background-image:url('images/plus.gif');
+ background-image:url('images/plus.gif');
 }
 .checkbox_tree_plus.minus{
-  background-image:url('images/minus.gif');
+ background-image:url('images/minus.gif');
 }
 .checkbox_tree_plus.leaf{
-  background-image:url('images/leaf.gif');
+ background-image:url('images/leaf.gif');
 }

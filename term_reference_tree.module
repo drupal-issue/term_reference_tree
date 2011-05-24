@@ -34,7 +34,7 @@ function term_reference_tree_page_callback($term, $element_id){
     )
   );
   return theme('checkbox_tree', $variables);
-}  
+}
 
 /**
  * Access callback.  Checks that the user has editing privileges for this form.
@@ -106,7 +106,7 @@ function theme_checkbox_tree_expand_button($variables){
   // Check if the term has any children, if so, we need to return a plus, else
   // we return a blank.
   $children = taxonomy_get_children($variables['term']->tid, $variables['term']->vid);
-  $output = '<div id="'.$variables['field_id'].'__'.$variables['term']->tid.'" class="checkbox_tree_plus ';
+  $output = '<div id="' . $variables['field_id'] . '__' . $variables['term']->tid . '" class="checkbox_tree_plus ';
   if(count($children)){
     $output .= 'plus';
   }else{
@@ -149,10 +149,10 @@ function theme_checkbox_tree_term($variables){
   );
   $variables['tid'] = $variables['term']->tid;
   return '<li>' . theme('checkbox_tree_expand_button', array(
-    'field_id' => $variables['element']['#id'], 
+    'field_id' => $variables['element']['#id'],
     'term' => $variables['term']
   )) . '<label>' . theme('checkbox', $checkbox_variables) . check_plain($variables['term']->name) . '</label>' . //theme('checkbox_tree', $variables) . 
-  '</li>';
+'</li>';
 }
 
 /**
