@@ -16,7 +16,8 @@ function term_reference_tree_menu(){
       'delivery callback' => 'ajax_deliver',
       'access callback' => 'term_reference_tree_access_callback',
       'access arguments' => array(
-        1
+        1,
+        2
       )
     )
   );
@@ -26,6 +27,9 @@ function term_reference_tree_menu(){
  * Callback used to return the additional HTML for a branch in a tree
  */
 function term_reference_tree_page_callback($term, $element_id){
+  // Note, we do not need to worry about default values here, as all boxes that
+  // were default checked will already be on the web page, therefore all 
+  // checkboxes being asked for will not be checked.
   $variables = array(
     'vid' => $term->vid,
     'tid' => $term->tid,
@@ -39,7 +43,8 @@ function term_reference_tree_page_callback($term, $element_id){
 /**
  * Access callback.  Checks that the user has editing privileges for this form.
  */
-function term_reference_tree_access_callback($form){
+function term_reference_tree_access_callback($term, $element_id){
+  // For now, we simply return TRUE.
   return TRUE;
 }
 
@@ -106,7 +111,7 @@ function theme_options_tree_expand_button($variables){
   // Check if the term has any children, if so, we need to return a plus, else
   // we return a blank.
   $children = taxonomy_get_children($variables['term']->tid, $variables['term']->vid);
-  $output = '<div id="' . $variables['field_id'] . '__' . $variables['term']->tid . '" class="options_tree_plus ';
+  $output = "<div id=\"{$variables['field_id']}__{$variables['term']->tid}\" class=\"options_tree_plus ";
   if(count($children)){
     $output .= 'plus';
   }else{
@@ -152,7 +157,7 @@ function theme_options_tree_term($variables){
   $display_text = check_plain($variables['term']->name);
   if(isset($variables['link']) && $variables['link']){
     $uri = taxonomy_term_uri($variables['term']);
-    $display_text = l($display_text, $uri['path']);    
+    $display_text = l($display_text, $uri['path']);
   }
   //entity_extract_ids($entity_type, $entity)
   return '<li>' . theme('options_tree_expand_button', array(
@@ -185,7 +190,9 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
         array(
           'data' => array(
             'term_reference_tree' => array(
-              'callback' => url('term-reference-tree')
+              'callback' => url('term-reference-tree'),
+              'plus_html' => '',
+              'minus_html' => ''
             )
           ),
           'type' => 'setting'
@@ -195,37 +202,72 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
     '#multiple' => $field['cardinality'],
     '#vocabulary' => $field['settings']['allowed_values'][0]['vocabulary'],
     '#tid' => 0,
-    '#leaves_only' => $instance['widget']['settings']['leaves_only'],
+    // TODO - Add back leaves only.
+    //'#leaves_only' => $instance['widget']['settings']['leaves_only'],
     '#element_validate' => array(
       '_term_reference_tree_widget_validate'
     ),
+    '#value_callback' => '_term_reference_tree_widget_set_values',
     '#default_value' => $default_value
   );
   return $element;
 }
 
 /**
+ * Set the values based on the user input
+ */
+function _term_reference_tree_widget_set_values($element, $input = FALSE, $form_state = array()){
+  if(isset($form_state['input'][$element['#id']])){
+    $values = array();
+    $vocabulary = taxonomy_vocabulary_machine_name_load($element['#vocabulary']);
+    foreach($form_state['input'][$element['#id']] as $tid){
+      $values[] = array(
+        'tid' => $tid
+      );
+    }
+    $element['#value'] = 4;
+    dpm($element);
+    return $element;
+  }
+}
+
+/**
  * Validates the term reference tree widgets.
  * 
  * This function sets the value of the tree widgets into a form that Drupal
- * can understand, and also checks if the field is required and has been
- * left empty.
+ * can understand. It also checks that a term has been set (if required), and
+ * the number of terms that have been selected is allowed.
  * 
  * @param $element
  * The element to be validated.
  * @param $form_state
  * The state of the form.
- * 
- * @return
- * The validated element.
  */
 function _term_reference_tree_widget_validate(&$element, &$form_state){
-  // TODO - Add validation.
-  $values = array();
-  foreach($form_state['input'][$element['#id']] as $tid){
-    $values[] = array(
-      'tid' => $tid
-    );
+  return $element;
+  if(isset($form_state['input'][$element['#id']])){
+    $values = array();
+    $vocabulary = taxonomy_vocabulary_machine_name_load($element['#vocabulary']);
+    foreach($form_state['input'][$element['#id']] as $tid){
+      // Check that this $tid is in the vocabulary (load the term is the slow way
+      // of doing this unfortunately).
+      $term = taxonomy_term_load($tid);
+      if($term && $term->vid == $vocabulary->vid){
+        $values[] = array(
+          'tid' => $tid
+        );
+      }else{
+        form_set_error($element['#field_name'], t('There has been an error, please contact an administrator'));
+        return $element;
+      }
+    }
+    // Check the count if we need to.
+    if($element['#multiple'] && count($values) > $element['#multiple']){
+      form_set_error($element['#field_name'], t('You have selected too many values for the field "%field_name"', array('%field_name' => $element['#title'])));
+      return $element;
+    }
+    $element['#value'] = $values;
+    form_set_value($element, $values, $form_state);
+    return $element;
   }
-  form_set_value($element, $values, $form_state);
 }
