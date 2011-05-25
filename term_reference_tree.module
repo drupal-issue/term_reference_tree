@@ -202,14 +202,18 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
     '#multiple' => $field['cardinality'],
     '#vocabulary' => $field['settings']['allowed_values'][0]['vocabulary'],
     '#tid' => 0,
-    // TODO - Add back leaves only.
-    //'#leaves_only' => $instance['widget']['settings']['leaves_only'],
-    '#element_validate' => array(
-      '_term_reference_tree_widget_validate'
-    ),
     '#value_callback' => '_term_reference_tree_widget_set_values',
     '#default_value' => $default_value
   );
+  // TODO - Fix following
+  /*if($instance['widget']['settings']['leaves_only']){
+    $element += array(
+      '#leaves_only' => $instance['widget']['settings']['leaves_only'],
+      '#element_validate' => array(
+        '_term_reference_tree_widget_validate'
+    	)
+    );    
+  }*/
   return $element;
 }
 
@@ -225,48 +229,14 @@ function _term_reference_tree_widget_set_values($element, $input = FALSE, $form_
         'tid' => $tid
       );
     }
-    $element['#value'] = 4;
-    dpm($element);
-    return $element;
+    return $values;
+  } else {
+    return array();
   }
 }
 /**
- * Validates the term reference tree widgets.
- * 
- * This function sets the value of the tree widgets into a form that Drupal
- * can understand. It also checks that a term has been set (if required), and
- * the number of terms that have been selected is allowed.
- * 
- * @param $element
- * The element to be validated.
- * @param $form_state
- * The state of the form.
+ * Validates the terms selected are all leaves.
  */
 function _term_reference_tree_widget_validate(&$element, &$form_state){
   return $element;
-  if(isset($form_state['input'][$element['#id']])){
-    $values = array();
-    $vocabulary = taxonomy_vocabulary_machine_name_load($element['#vocabulary']);
-    foreach($form_state['input'][$element['#id']] as $tid){
-      // Check that this $tid is in the vocabulary (load the term is the slow way
-      // of doing this unfortunately).
-      $term = taxonomy_term_load($tid);
-      if($term && $term->vid == $vocabulary->vid){
-        $values[] = array(
-          'tid' => $tid
-        );
-      }else{
-        form_set_error($element['#field_name'], t('There has been an error, please contact an administrator'));
-        return $element;
-      }
-    }
-    // Check the count if we need to.
-    if($element['#multiple'] && count($values) > $element['#multiple']){
-      form_set_error($element['#field_name'], t('You have selected too many values for the field "%field_name"', array('%field_name' => $element['#title'])));
-      return $element;
-    }
-    $element['#value'] = $values;
-    form_set_value($element, $values, $form_state);
-    return $element;
-  }
 }
