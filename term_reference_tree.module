@@ -207,11 +207,29 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
     '#element_validate' => array(
       '_term_reference_tree_widget_validate'
     ),
+    '#value_callback' => '_term_reference_tree_widget_set_values',
     '#default_value' => $default_value
   );
   return $element;
 }
 
+/**
+ * Set the values based on the user input
+ */
+function _term_reference_tree_widget_set_values($element, $input = FALSE, $form_state = array()){
+  if(isset($form_state['input'][$element['#id']])){
+    $values = array();
+    $vocabulary = taxonomy_vocabulary_machine_name_load($element['#vocabulary']);
+    foreach($form_state['input'][$element['#id']] as $tid){
+      $values[] = array(
+        'tid' => $tid
+      );
+    }
+    $element['#value'] = 4;
+    dpm($element);
+    return $element;
+  }
+}
 /**
  * Validates the term reference tree widgets.
  * 
