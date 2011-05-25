@@ -5,19 +5,24 @@
  */
 function term_reference_tree_menu(){
   return array(
-    'term-reference-tree/%taxonomy_term/%' => array(
+    'term-reference-tree/%/%/%/%taxonomy_term/%' => array(
       'title' => 'term_reference_tree callback',
       'title callback' => FALSE,
       'page callback' => 'term_reference_tree_page_callback',
       'page arguments' => array(
         1,
-        2
+        2,
+        3,
+        4,
+        5
       ),
       'delivery callback' => 'ajax_deliver',
       'access callback' => 'term_reference_tree_access_callback',
       'access arguments' => array(
         1,
-        2
+        2,
+        3,
+        4
       )
     )
   );
@@ -34,6 +39,13 @@ function term_reference_tree_field_widget_settings_form($field, $instance){
       '#title' => t('Leaves only'),
       '#description' => t("Don't allow the user to select items that have children"),
       '#default_value' => isset($instance['widget']['settings']['leaves_only']) ? $instance['widget']['settings']['leaves_only'] : 0,
+      '#return_value' => 1
+    );
+    $form['link_terms'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Link terms'),
+      '#description' => t("Add the term names as links to their term page."),
+      '#default_value' => isset($instance['widget']['settings']['link_terms']) ? $instance['widget']['settings']['link_terms'] : 0,
       '#return_value' => 1
     );
     if(module_exists('views')){
@@ -68,15 +80,20 @@ function term_reference_tree_field_widget_settings_form($field, $instance){
 /**
  * Callback used to return the additional HTML for a branch in a tree
  */
-function term_reference_tree_page_callback($term, $element_id){
+function term_reference_tree_page_callback($entity, $field_name, $bundle, $term, $element_id){
   // Note, we do not need to worry about default values here, as all boxes that
   // were default checked will already be on the web page, therefore all 
   // checkboxes being asked for will not be checked.
+  // Load the field instance first, so that we can check settings.
+  $field_instance = field_info_instance($entity, $field_name, $bundle);
+  $field = field_info_field($field_name);
   $variables = array(
     'vid' => $term->vid,
     'tid' => $term->tid,
     'element' => array(
-      '#id' => $element_id
+      '#id' => $element_id,
+      '#link_terms' => $field_instance['widget']['settings']['link_terms'],
+      '#multiple' => $field['cardinality']
     )
   );
   return theme('options_tree', $variables);
@@ -85,7 +102,7 @@ function term_reference_tree_page_callback($term, $element_id){
 /**
  * Access callback.  Checks that the user has editing privileges for this form.
  */
-function term_reference_tree_access_callback($term, $element_id){
+function term_reference_tree_access_callback($field_name, $term){
   // For now, we simply return TRUE.
   return TRUE;
 }
@@ -159,7 +176,7 @@ function theme_options_tree_expand_button($variables){
   }else{
     $output .= 'leaf';
   }
-  return $output . '">&nbsp;</span>';
+  return $output . '"><img src="' . base_path() . drupal_get_path('module', 'term_reference_tree') . '/images/blank.gif" width="16px" height="16px"/></span>';
 }
 
 /**
@@ -191,21 +208,32 @@ function theme_options_tree_term($variables){
     'element' => array(
       '#id' => $variables['element']['#id'] . '-' . $variables['term']->tid,
       '#name' => $variables['element']['#id'] . '[]',
-      '#return_value' => $variables['term']->tid
+      '#return_value' => $variables['term']->tid,
     )
   );
   $variables['tid'] = $variables['term']->tid;
-  $variables['link'] = TRUE;
   $display_text = check_plain($variables['term']->name);
-  if(isset($variables['link']) && $variables['link']){
+  if(isset($variables['element']['#link_terms']) && $variables['element']['#link_terms']){
     $uri = taxonomy_term_uri($variables['term']);
     $display_text = l($display_text, $uri['path']);
   }
-  //entity_extract_ids($entity_type, $entity)
+  if($variables['element']['#multiple'] == 1){
+    $radio_or_checkbox = 'radio';
+    if(isset($variables['element']['#default_value'][0])){
+      $checkbox_variables['element']['#value'] = $variables['element']['#default_value'][0];
+    }
+  }else{
+    $radio_or_checkbox = 'checkbox';
+    if(isset($variables['element']['#default_value']) && array_search($variables['term']->tid, $variables['element']['#default_value']) !== FALSE){
+      $checkbox_variables['element']['#checked'] = TRUE;
+    }else{
+      $checkbox_variables['element']['#checked'] = FALSE;
+    }
+  }
   return '<li>' . theme('options_tree_expand_button', array(
     'field_id' => $variables['element']['#id'],
     'term' => $variables['term']
-  )) . '<label>' . theme('checkbox', $checkbox_variables) . $display_text . '</label>' . //theme('options_tree', $variables) . 
+  )) . '<label>' . theme($radio_or_checkbox, $checkbox_variables) . $display_text . '</label>' . //theme('options_tree', $variables) . 
 '</li>';
 }
 
@@ -232,7 +260,7 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
         array(
           'data' => array(
             'term_reference_tree' => array(
-              'callback' => url('term-reference-tree'),
+              'callback' => url("term-reference-tree/{$instance['entity_type']}/{$instance['field_name']}/{$instance['bundle']}"),
               'plus_html' => '',
               'minus_html' => ''
             )
@@ -245,17 +273,13 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
     '#vocabulary' => $field['settings']['allowed_values'][0]['vocabulary'],
     '#tid' => 0,
     '#value_callback' => '_term_reference_tree_widget_set_values',
-    '#default_value' => $default_value
+    '#default_value' => $default_value,
+    '#leaves_only' => $instance['widget']['settings']['leaves_only'],
+    '#link_terms' => $instance['widget']['settings']['link_terms'],
+    '#element_validate' => array(
+      '_term_reference_tree_widget_validate'
+    )
   );
-  // TODO - Fix following
-  /*if($instance['widget']['settings']['leaves_only']){
-    $element += array(
-      '#leaves_only' => $instance['widget']['settings']['leaves_only'],
-      '#element_validate' => array(
-        '_term_reference_tree_widget_validate'
-    	)
-    );    
-  }*/
   return $element;
 }
 
