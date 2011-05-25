@@ -93,7 +93,8 @@ function term_reference_tree_page_callback($entity, $field_name, $bundle, $term,
     'element' => array(
       '#id' => $element_id,
       '#link_terms' => $field_instance['widget']['settings']['link_terms'],
-      '#multiple' => $field['cardinality']
+      '#multiple' => $field['cardinality'],
+      '#leaves_only' => $field_instance['widget']['settings']['leaves_only']
     )
   );
   return theme('options_tree', $variables);
@@ -212,10 +213,21 @@ function theme_options_tree_term($variables){
     )
   );
   $variables['tid'] = $variables['term']->tid;
-  $display_text = check_plain($variables['term']->name);
+  $display_text = check_plain($variables['term']->name);  
   if(isset($variables['element']['#link_terms']) && $variables['element']['#link_terms']){
     $uri = taxonomy_term_uri($variables['term']);
     $display_text = l($display_text, $uri['path']);
+  }
+  // If we're only showing leaves, then we need only return a basic <li> element
+  if($variables['element']['#leaves_only']){
+    // Does this term have children, if so, return the basic element
+    $children = taxonomy_get_children($variables['term']->tid, $variables['term']->vid);
+    if(count($children)){
+      return '<li>'.theme('options_tree_expand_button', array(
+        'field_id' => $variables['element']['#id'],
+        'term' => $variables['term']
+      )) .'<label><input type="hidden" value="1">'.$display_text . '</label></li>';      
+    }
   }
   if($variables['element']['#multiple'] == 1){
     $radio_or_checkbox = 'radio';
@@ -242,7 +254,6 @@ function theme_options_tree_term($variables){
  */
 function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element){
   // TODO - Add default values
-  // TODO - Enable altering of TID (could be alternative to filtering by a view)
   $default_value = array();
   foreach($items as $item){
     $default_value[] = $item['tid'];

@@ -9,7 +9,7 @@
             $(this).addClass('minus');
           } else {
             var original_click = $(this);
-            var tid = $(this).siblings('label').first().children().first().val();
+            var tid = $(this).siblings('label').first().children('input').first().val();
             var field_id = $(this).attr('id').split('__').shift();
             $.getJSON(Drupal.settings.term_reference_tree.callback+'/'+tid+'/'+field_id, function(data){
               $(original_click).parent().append(data[1]["data"]);
