@@ -24,6 +24,48 @@ function term_reference_tree_menu(){
 }
 
 /**
+ * Implements hook_field_widget_settings_form().
+ */
+function term_reference_tree_field_widget_settings_form($field, $instance){
+  $form = array();
+  if($instance['widget']['type'] == 'term_reference_tree'){
+    $form['leaves_only'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Leaves only'),
+      '#description' => t("Don't allow the user to select items that have children"),
+      '#default_value' => isset($instance['widget']['settings']['leaves_only']) ? $instance['widget']['settings']['leaves_only'] : 0,
+      '#return_value' => 1
+    );
+    if(module_exists('views')){
+      $views = views_get_all_views();
+      $options = array(
+        '' => 'none'
+      );
+      foreach($views as $name => $view){
+        if($view->base_table == 'taxonomy_term_data'){
+          foreach($view->display as $display){
+            $options["$name:{$display->id}"] = "{$view->human_name}: {$display->display_title}";
+          }
+        }
+      }
+      $form['filter_view'] = array(
+        '#type' => 'select',
+        '#title' => 'Filter by view',
+        '#description' => t("Filter the available options based on whether they appear in the selected view."),
+        '#default_value' => isset($instance['widget']['settings']['filter_view']) ? $instance['widget']['settings']['filter_view'] : '',
+        '#options' => $options
+      );
+    }else{
+      $form['filter_view'] = array(
+        '#type' => 'hidden',
+        '#value' => isset($instance['widget']['settings']['filter_view']) ? $instance['widget']['settings']['filter_view'] : ''
+      );
+    }
+  }
+  return $form;
+}
+
+/**
  * Callback used to return the additional HTML for a branch in a tree
  */
 function term_reference_tree_page_callback($term, $element_id){
@@ -230,10 +272,11 @@ function _term_reference_tree_widget_set_values($element, $input = FALSE, $form_
       );
     }
     return $values;
-  } else {
+  }else{
     return array();
   }
 }
+
 /**
  * Validates the terms selected are all leaves.
  */
