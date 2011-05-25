@@ -218,34 +218,33 @@ function theme_options_tree_term($variables){
     $uri = taxonomy_term_uri($variables['term']);
     $display_text = l($display_text, $uri['path']);
   }
-  // If we're only showing leaves, then we need only return a basic <li> element
-  if($variables['element']['#leaves_only']){
-    // Does this term have children, if so, return the basic element
-    $children = taxonomy_get_children($variables['term']->tid, $variables['term']->vid);
-    if(count($children)){
-      return '<li>'.theme('options_tree_expand_button', array(
-        'field_id' => $variables['element']['#id'],
-        'term' => $variables['term']
-      )) .'<label><input type="hidden" value="1">'.$display_text . '</label></li>';      
-    }
-  }
-  if($variables['element']['#multiple'] == 1){
-    $radio_or_checkbox = 'radio';
-    if(isset($variables['element']['#default_value'][0])){
-      $checkbox_variables['element']['#value'] = $variables['element']['#default_value'][0];
-    }
-  }else{
-    $radio_or_checkbox = 'checkbox';
-    if(isset($variables['element']['#default_value']) && array_search($variables['term']->tid, $variables['element']['#default_value']) !== FALSE){
-      $checkbox_variables['element']['#checked'] = TRUE;
+  // If we're only showing leaves, then we need only return a basic <li> element  
+  // Does this term have children, if so, return the basic element
+  $children = taxonomy_get_children($variables['term']->tid, $variables['term']->vid);
+  if($variables['element']['#leaves_only'] && count($children)){
+    $input_type = 'hidden';
+    unset($checkbox_variables['element']['#name']);
+    unset($checkbox_variables['element']['#id']);
+    $checkbox_variables['element']['#value'] = $variables['term']->tid;
+  } else {
+    if($variables['element']['#multiple'] == 1){
+      $input_type = 'radio';
+      if(isset($variables['element']['#default_value'][0])){
+        $checkbox_variables['element']['#value'] = $variables['element']['#default_value'][0];
+      }
     }else{
-      $checkbox_variables['element']['#checked'] = FALSE;
+      $input_type = 'checkbox';
+      if(isset($variables['element']['#default_value']) && array_search($variables['term']->tid, $variables['element']['#default_value']) !== FALSE){
+        $checkbox_variables['element']['#checked'] = TRUE;
+      }else{
+        $checkbox_variables['element']['#checked'] = FALSE;
+      }
     }
   }
   return '<li>' . theme('options_tree_expand_button', array(
     'field_id' => $variables['element']['#id'],
     'term' => $variables['term']
-  )) . '<label>' . theme($radio_or_checkbox, $checkbox_variables) . $display_text . '</label>' . //theme('options_tree', $variables) . 
+  )) . '<label>' . theme($input_type, $checkbox_variables) . $display_text . '</label>' . //theme('options_tree', $variables) . 
 '</li>';
 }
 
