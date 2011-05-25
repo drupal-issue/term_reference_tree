@@ -1,13 +1,17 @@
-.form-type-checkbox-tree li{
+.form-type-options-tree li{
  list-style-type:none;
 }
-.form-type-checkbox-tree input{
+.form-type-options-tree input{
  margin:0 5px;
 }
-.form-type-checkbox-tree label{
+.form-type-options-tree{
+	
+}
+.form-type-options-tree label{
+	display:inline;
 }
 .options_tree_plus{
- padding:8px 0;
+ padding:0;
  width:11px;
  height:11px;
  background-repeat:no-repeat;
@@ -17,11 +21,11 @@
  cursor:pointer;
 }
 .options_tree_plus.plus{
- background-image:url('images/plus.gif');
+ background-image:url('images/plus.png');
 }
 .options_tree_plus.minus{
- background-image:url('images/minus.gif');
+ background-image:url('images/minus.png');
 }
 .options_tree_plus.leaf{
- background-image:url('images/leaf.gif');
+ background-image:url('images/leaf.png');
 }

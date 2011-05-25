@@ -153,13 +153,13 @@ function theme_options_tree_expand_button($variables){
   // Check if the term has any children, if so, we need to return a plus, else
   // we return a blank.
   $children = taxonomy_get_children($variables['term']->tid, $variables['term']->vid);
-  $output = "<div id=\"{$variables['field_id']}__{$variables['term']->tid}\" class=\"options_tree_plus ";
+  $output = "<span id=\"{$variables['field_id']}__{$variables['term']->tid}\" class=\"options_tree_plus ";
   if(count($children)){
     $output .= 'plus';
   }else{
     $output .= 'leaf';
   }
-  return $output . '">&nbsp;</div>';
+  return $output . '">&nbsp;</span>';
 }
 
 /**
