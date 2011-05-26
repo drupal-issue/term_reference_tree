@@ -358,7 +358,13 @@ function _term_reference_tree_widget_set_values($element, $input = FALSE, $form_
  */
 function _term_reference_tree_widget_validate(&$element, &$form_state){
   // Check we've set only leaves (if required).
-  
+  if($element['#leaves_only']){
+    foreach($element['#value'] as $tid){
+      if(count(taxonomy_get_children($tid))){
+        form_set_error($element['#field_name'], t('You must only select leaf terms.'));        
+      }
+    }
+  }
   // Check the count is allowed
   if($element['#multiple'] && count($element['#value']) > $element['#multiple']){
     form_set_error($element['#field_name'], t('You have selected too many terms, only !number allowed', array(
