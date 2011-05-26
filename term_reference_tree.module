@@ -322,6 +322,9 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
       '_term_reference_tree_widget_validate'
     )
   );
+  if($field['cardinality'] > 1){
+    $element['#description'] .= '<div class="description">'.t('Please check up to !number terms.', array('!number' => $field['cardinality'])).'</div>';
+  }
   return $element;
 }
 
@@ -337,10 +340,12 @@ function _term_reference_tree_widget_set_values($element, $input = FALSE, $form_
     foreach($parts as $part){
       $input = $input[$part];
     }
-    foreach($input as $tid){
-      $values[] = array(
-        'tid' => $tid
-      );
+    if(is_array($input)){
+      foreach($input as $tid){
+        $values[] = array(
+          'tid' => $tid
+        );
+      }
     }
     return $values;
   }else{
@@ -352,5 +357,15 @@ function _term_reference_tree_widget_set_values($element, $input = FALSE, $form_
  * Validates the terms selected are all leaves.
  */
 function _term_reference_tree_widget_validate(&$element, &$form_state){
+  // Check we've set only leaves (if required).
+  
+  // Check the count is allowed
+  if($element['#multiple'] && count($element['#value']) > $element['#multiple']){
+    form_set_error($element['#field_name'], t('You have selected too many terms, only !number allowed', array(
+      '!number' => format_plural($element['#multiple'], 'one is', '!number are', array(
+        '!number' => $element['#multiple']
+      ))
+    )));
+  }
   return $element;
 }
