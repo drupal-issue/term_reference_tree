@@ -1,6 +1,9 @@
 .form-type-options-tree li{
  list-style-type:none;
 }
+.form-type-options-tree ul{
+ margin: 0 0 0 19px !important;
+}
 .form-type-options-tree input{
  margin:0 5px;
 }

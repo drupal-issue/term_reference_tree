@@ -2,6 +2,9 @@
 
 /**
  * Implementation of hook_menu().
+ * 
+ * A single menu item, used by the AHAH/AJAX callback when clicking on the plus
+ * icon on a page.
  */
 function term_reference_tree_menu(){
   return array(
@@ -155,11 +158,14 @@ function term_reference_tree_theme(){
     'options_tree_term' => array(
       'term' => 'term',
       'tid' => 'tid',
-      'vid' => 'vid'
+      'vid' => 'vid',
+      'ancestors' => 'ancestors'
     ),
     'options_tree_expand_button' => array(
       'field_id' => 'field_id',
-      'term' => 'term'
+      'term' => 'term',
+      'open' => FALSE,
+      'children' => TRUE
     )
   );
 }
@@ -170,10 +176,13 @@ function term_reference_tree_theme(){
 function theme_options_tree_expand_button($variables){
   // Check if the term has any children, if so, we need to return a plus, else
   // we return a blank.
-  $children = taxonomy_get_children($variables['term']->tid, $variables['term']->vid);
   $output = "<span id=\"{$variables['field_id']}__{$variables['term']->tid}\" class=\"options_tree_plus ";
-  if(count($children)){
-    $output .= 'plus';
+  if($variables['children']){
+    if($variables['open']){
+      $output .= 'minus';
+    }else{
+      $output .= 'plus';
+    }
   }else{
     $output .= 'leaf';
   }
@@ -193,10 +202,11 @@ function theme_options_tree($variables){
     $variables['vid'] = $vocabulary->vid;
     $variables['tid'] = 0;
   }
-  // Get the root terms.  These will need to be merged with the ancestors of the
-  // "default_value" terms.
+  // Get the root terms.
   $root_terms = taxonomy_get_tree($variables['vid'], $variables['tid'], 1);
   $output = "<ul>";
+  // Get the terms that need to be displayed
+  $variables['ancestors'] = _term_reference_tree_get_ancestors_and_siblings($variables['element']['#default_value']);
   foreach($root_terms as $term){
     $variables['term'] = $term;
     $output .= theme('options_tree_term', $variables);
@@ -209,14 +219,14 @@ function theme_options_tree_term($variables){
     'element' => array(
       '#id' => $variables['element']['#id'] . '-' . $variables['term']->tid,
       '#name' => $variables['element']['#id'] . '[]',
-      '#return_value' => $variables['term']->tid,
+      '#return_value' => $variables['term']->tid
     )
   );
   $variables['tid'] = $variables['term']->tid;
-  $display_text = check_plain($variables['term']->name);  
+  $display_text = check_plain($variables['term']->name);
   if(isset($variables['element']['#link_terms']) && $variables['element']['#link_terms']){
     $uri = taxonomy_term_uri($variables['term']);
-    $display_text = l($display_text, $uri['path']);
+    $display_text = l($display_text, $uri['path'], array('attributes' => array('target'=>'_blank')));
   }
   // If we're only showing leaves, then we need only return a basic <li> element  
   // Does this term have children, if so, return the basic element
@@ -226,7 +236,7 @@ function theme_options_tree_term($variables){
     unset($checkbox_variables['element']['#name']);
     unset($checkbox_variables['element']['#id']);
     $checkbox_variables['element']['#value'] = $variables['term']->tid;
-  } else {
+  }else{
     if($variables['element']['#multiple'] == 1){
       $input_type = 'radio';
       if(isset($variables['element']['#default_value'][0])){
@@ -241,11 +251,29 @@ function theme_options_tree_term($variables){
       }
     }
   }
+  //dpm($variables);
   return '<li>' . theme('options_tree_expand_button', array(
     'field_id' => $variables['element']['#id'],
-    'term' => $variables['term']
-  )) . '<label>' . theme($input_type, $checkbox_variables) . $display_text . '</label>' . //theme('options_tree', $variables) . 
-'</li>';
+    'term' => $variables['term'],
+    'children' => count(taxonomy_get_children($variables['term']->tid, $variables['term']->vid)),
+    'open' => isset($variables['ancestors'][$variables['term']->tid])
+  )) . '<label>' . theme($input_type, $checkbox_variables) . $display_text . '</label>' . (isset($variables['ancestors'][$variables['term']->tid]) ? theme('options_tree', $variables) : '') . '</li>';
+}
+
+/**
+ * Returns all the ancestors of the default terms
+ */
+function _term_reference_tree_get_ancestors_and_siblings($tids){
+  $ancestors = array();
+  foreach($tids as $tid){
+    $parents = taxonomy_get_parents_all($tid);
+    // Note, we remove the final term from the list, we don't need that.
+    array_shift($parents);
+    foreach($parents as $parent){
+      $ancestors[$parent->tid] = $parent;
+    }
+  }
+  return $ancestors;
 }
 
 /**
