@@ -94,7 +94,7 @@ function term_reference_tree_page_callback($entity, $field_name, $bundle, $term,
     'vid' => $term->vid,
     'tid' => $term->tid,
     'element' => array(
-      '#id' => $element_id,
+      '#name' => $element_id,
       '#link_terms' => $field_instance['widget']['settings']['link_terms'],
       '#multiple' => $field['cardinality'],
       '#leaves_only' => $field_instance['widget']['settings']['leaves_only']
@@ -218,7 +218,7 @@ function theme_options_tree_term($variables){
   $checkbox_variables = array(
     'element' => array(
       '#id' => $variables['element']['#id'] . '-' . $variables['term']->tid,
-      '#name' => $variables['element']['#id'] . '[]',
+      '#name' => $variables['element']['#name'] . '[]',
       '#return_value' => $variables['term']->tid
     )
   );
@@ -226,7 +226,11 @@ function theme_options_tree_term($variables){
   $display_text = check_plain($variables['term']->name);
   if(isset($variables['element']['#link_terms']) && $variables['element']['#link_terms']){
     $uri = taxonomy_term_uri($variables['term']);
-    $display_text = l($display_text, $uri['path'], array('attributes' => array('target'=>'_blank')));
+    $display_text = l($display_text, $uri['path'], array(
+      'attributes' => array(
+        'target' => '_blank'
+      )
+    ));
   }
   // If we're only showing leaves, then we need only return a basic <li> element  
   // Does this term have children, if so, return the basic element
@@ -251,9 +255,8 @@ function theme_options_tree_term($variables){
       }
     }
   }
-  //dpm($variables);
   return '<li>' . theme('options_tree_expand_button', array(
-    'field_id' => $variables['element']['#id'],
+    'field_id' => $variables['element']['#name'],
     'term' => $variables['term'],
     'children' => count(taxonomy_get_children($variables['term']->tid, $variables['term']->vid)),
     'open' => isset($variables['ancestors'][$variables['term']->tid])
@@ -298,9 +301,10 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
         array(
           'data' => array(
             'term_reference_tree' => array(
-              'callback' => url("term-reference-tree/{$instance['entity_type']}/{$instance['field_name']}/{$instance['bundle']}"),
-              'plus_html' => '',
-              'minus_html' => ''
+              $instance['field_name'] => array(
+                'callback' => url("term-reference-tree/{$instance['entity_type']}/{$instance['field_name']}/{$instance['bundle']}"),
+                'max' => $field['cardinality']
+              )
             )
           ),
           'type' => 'setting'
@@ -325,10 +329,15 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
  * Set the values based on the user input
  */
 function _term_reference_tree_widget_set_values($element, $input = FALSE, $form_state = array()){
-  if(isset($form_state['input'][$element['#id']])){
+  // First, we need to flatten stuff, due to the silly "[und]".
+  $parts = preg_split('/[\[\]]/', $element['#name'], -1, PREG_SPLIT_NO_EMPTY);
+  if(isset($form_state['input'][$parts[0]])){
     $values = array();
-    $vocabulary = taxonomy_vocabulary_machine_name_load($element['#vocabulary']);
-    foreach($form_state['input'][$element['#id']] as $tid){
+    $input = $form_state['input'];
+    foreach($parts as $part){
+      $input = $input[$part];
+    }
+    foreach($input as $tid){
       $values[] = array(
         'tid' => $tid
       );
