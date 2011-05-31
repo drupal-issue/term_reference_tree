@@ -323,7 +323,7 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
     )
   );
   if($field['cardinality'] > 1){
-    $element['#description'] .= '<div class="description">'.t('Please check up to !number terms.', array('!number' => $field['cardinality'])).'</div>';
+    $element['#description'] .= '<div class="description">'.t('Select up to !number options.', array('!number' => $field['cardinality'])).'</div>';
   }
   return $element;
 }
@@ -360,7 +360,7 @@ function _term_reference_tree_widget_validate(&$element, &$form_state){
   // Check we've set only leaves (if required).
   if($element['#leaves_only']){
     foreach($element['#value'] as $tid){
-      if(count(taxonomy_get_children($tid))){
+      if(count(taxonomy_get_children($tid['tid']))){
         form_set_error($element['#field_name'], t('You must only select leaf terms.'));        
       }
     }
