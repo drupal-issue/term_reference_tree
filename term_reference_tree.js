@@ -40,7 +40,7 @@
       //On page load, check if the user wants a track list. If so, add the 
       //currently selected items to it.
       if($(this).hasClass('term-reference-tree-track-list-shown')) {
-        var track_list_container = $(this).find('.term-reference-tree-track-list');
+        var track_list_container = $('<ul class="term-reference-tree-track-list"></ul>').appendTo($('.term-reference-track-list-container',this));
         
         //Var to track whether using checkboxes or radio buttons.
         var input_type =
