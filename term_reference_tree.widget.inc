@@ -704,6 +704,7 @@ function _term_reference_tree_build_level(&$element, &$term, &$form_state, &$val
     '#start_minimized' => $start_minimized,
     '#leaves_only' => $leaves_only,
     '#tid' => $tid,
+    '#term_name' => ($tid != 0) ? $term->name : '',
     '#name' => $element['#name'] . '-' . $tid,
     '#depth' => $depth,
     '#use_ajax' => $element['#use_ajax'],
@@ -811,6 +812,12 @@ function _term_reference_tree_build_item(&$element, &$term, &$form_state, &$valu
     $container[$term->tid . '-children'] = _term_reference_tree_build_level($element, $term, $form_state, $value, $max_choices, $parents, $depth + 1);
 
     if(isset($value[$term->tid]) || $container[$term->tid . '-children']['#children_selected']) {
+      $container['#children_selected'] = 1;
+      $container[$term->tid]['#children_selected'] = 1;
+    }
+  }
+  else {
+    if(isset($value[$term->tid])) {
       $container['#children_selected'] = 1;
     }
   }
