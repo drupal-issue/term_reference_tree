@@ -1,5 +1,6 @@
 name = Term Reference Tree
 description = An expanding/collapsing tree widget for selecting terms in a taxonomy term reference field
 package = Other
+core = 7.x
 
 dependencies[] = taxonomy

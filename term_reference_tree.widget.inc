@@ -51,6 +51,12 @@ function term_reference_tree_element_info() {
       '#theme' => array('checkbox_tree_label'),
       '#pre_render' => array('form_pre_render_conditional_form_element'),
     ),
+    'checkbox_tree_expandbutton' => array(
+      '#input' => true,
+      '#theme' => array('checkbox_tree_expandbutton'),
+      '#process' => array('_term_reference_tree_process_expandbutton', 'ajax_process_form'),
+      '#pre_render' => array('form_pre_render_conditional_form_element'),
+    ),      
     'checkbox_tree_track_list' => array(
       '#input' => false,
       '#theme' => array('checkbox_tree_track_list'),
@@ -231,8 +237,11 @@ function theme_checkbox_tree($variables) {
 function theme_checkbox_tree_level($variables) {
   $element = $variables['element'];
   $sm = '';
+  $attributes = $element['#attributes'];
+  
+  $attributes['class'][] = 'term-reference-tree-level';
   if(array_key_exists('#start_minimized', $element) && $element['#start_minimized']) {
-    $sm = " term-reference-tree-start-minimized";
+    $attributes['class'][] = 'term-reference-tree-start-minimized';
   }
 
   $max_choices = 0;
@@ -241,7 +250,12 @@ function theme_checkbox_tree_level($variables) {
   }
 
   if($element['#use_ajax'] == 0 || $element['#depth'] == 0 || $element['#children_selected']) {
-    $output = "<ul class='term-reference-tree-level$sm' id='{$element['#name']}-level'>";
+    $attributes['id'] = "{$element['#name']}-level";
+    if(!isset($element['#expanded']) || !$element['#expanded']) {
+      $attributes['class'][] = 'term-reference-tree-hidden';
+    }
+    
+    $output = '<ul ' . drupal_attributes($attributes) . '>';
     $children = element_children($element);
     foreach($children as $child) {
       $output .= "<li>";
@@ -252,7 +266,9 @@ function theme_checkbox_tree_level($variables) {
     $output .= "</ul>";
   }
   else {
-    $output = "<div class='hidden term-reference-tree-level$sm' id='{$element['#name']}-level-collapsed'></div>";
+    $attributes['id'] = "{$element['#name']}-level-collapsed";
+    $attributes['class'][] = 'hidden';
+    $output = '<div ' . drupal_attributes($attributes) . '></div>';
   }
 
   return $output;
@@ -267,17 +283,32 @@ function theme_checkbox_tree_item($variables) {
   $children = element_children($element);
   $output = "";
 
-  if(is_array($children) && count($children) > 1) {
-    $output .= "<div class='term-reference-tree-button'></div>";
-
-  }
-  elseif(!$element['#leaves_only']) {
-    $output .= "<div class='no-term-reference-tree-button'></div>";
-  }
-
   foreach($children as $child) {
     $output .= drupal_render($element[$child]);
   }
+
+  return $output;
+}
+
+function theme_checkbox_tree_expandbutton($variables) {
+  $element = $variables['element'];
+  $has_children = $element['#has_children'];
+  $output = "";
+
+  $attributes = $element['#attributes'];
+  $attributes['id'] = $element['#id'];
+
+  if($has_children) {
+    $attributes['class'][] = 'term-reference-tree-button';
+    if(!$element['#value']['expanded']) {
+      $attributes['class'][] = 'term-reference-tree-collapsed';
+    }
+  }
+  elseif(!$element['#leaves_only']) {
+    $attributes['class'][] = 'no-term-reference-tree-button';
+  }
+
+  $output = "<input type='image' value='' " . drupal_attributes($attributes) . " onclick='return false;'>";
 
   return $output;
 }
@@ -287,7 +318,9 @@ function theme_checkbox_tree_item($variables) {
  */
 function theme_checkbox_tree_label($variables) {
   $element = $variables['element'];
-  $output = "<div class='parent-term'>" . $element['#value'] . "</div>";
+  $attributes = $element['#attributes'];
+  $attributes['class'][] = 'parent-term';
+  $output = "<div " . drupal_attributes($attributes) . ">" . $element['#value'] . "</div>";
   return $output;
 }
 
@@ -611,7 +644,7 @@ function _term_reference_tree_get_allowed_values($filter) {
  * @return
  *   The processed element.
  */
-function term_reference_tree_process_checkbox_tree($element, $form_state) {
+function term_reference_tree_process_checkbox_tree($element, &$form_state) {
   if(is_array($form_state)) {
     if (!empty($element['#max_choices']) && $element['#max_choices'] != '-1')
       drupal_add_js(array('term_reference_tree' => array('trees' => array($element['#id'] => array('max_choices'=>$element['#max_choices'])))), 'setting');
@@ -620,6 +653,8 @@ function term_reference_tree_process_checkbox_tree($element, $form_state) {
     if($element['#filter_view'] != '') {
       $allowed = _term_reference_tree_get_allowed_values($element['#filter_view']);
     }
+
+    $element['#allowed'] = $allowed;
 
     if(empty($element['#options'])) {
       $element['#options_tree'] = _term_reference_tree_get_term_hierarchy($element['#parent_tid'], $element['#vocabulary'], $allowed, $element['#filter_view'], '');
@@ -685,7 +720,7 @@ function term_reference_tree_process_checkbox_tree($element, $form_state) {
  * @return
  *   A completed checkbox_tree_level element.
  */
-function _term_reference_tree_build_level(&$element, &$term, &$form_state, &$value, $max_choices, $parent_tids = array(), $depth = 0) {
+function _term_reference_tree_build_level(&$element, &$term, &$form_state, &$value, $max_choices, $parent_tids = array(), $depth = 0, $ajax = FALSE) {
   $start_minimized = FALSE;
   if(array_key_exists('#start_minimized', $element)) {
     $start_minimized = $element['#start_minimized'];
@@ -704,15 +739,18 @@ function _term_reference_tree_build_level(&$element, &$term, &$form_state, &$val
     '#start_minimized' => $start_minimized,
     '#leaves_only' => $leaves_only,
     '#tid' => $tid,
+    '#id' => ($tid != 0) ? $element['#name'] . '-' . $term->tid . '-level-collapsed' : '',
     '#term_name' => ($tid != 0) ? $term->name : '',
     '#name' => $element['#name'] . '-' . $tid,
     '#depth' => $depth,
     '#use_ajax' => $element['#use_ajax'],
     '#children_selected' => 0,
+    '#expanded' => 1,
   );
 
-  foreach($term->children as $t) {
-    $container[$t->tid] = _term_reference_tree_build_item($element, $t, $form_state, $value, $max_choices, $parent_tids, $depth);
+  foreach($term->children as $t) {    
+    $container[$t->tid] = _term_reference_tree_build_item($element, $t, $form_state, $value, $max_choices, $parent_tids, $depth, $ajax);
+    
     if($container[$t->tid]['#children_selected']) {
       $container['#children_selected'] = 1;
     }
@@ -720,7 +758,6 @@ function _term_reference_tree_build_level(&$element, &$term, &$form_state, &$val
 
   return $container;
 }
-
 
 /**
  * Builds a single item in the term reference tree widget.
@@ -746,7 +783,7 @@ function _term_reference_tree_build_level(&$element, &$term, &$form_state, &$val
  *   A completed checkbox_tree_item element, which contains a checkbox and
  *   possibly a checkbox_tree_level element as well.
  */
-function _term_reference_tree_build_item(&$element, &$term, &$form_state, &$value, $max_choices, $parent_tids, $depth) {
+function _term_reference_tree_build_item(&$element, &$term, &$form_state, &$value, $max_choices, $parent_tids, $depth, $ajax) {
   $start_minimized = FALSE;
   if(array_key_exists('#start_minimized', $element)) {
     $start_minimized = $element['#start_minimized'];
@@ -791,10 +828,6 @@ function _term_reference_tree_build_item(&$element, &$term, &$form_state, &$valu
       $e['#id'] = drupal_html_id('edit-' . implode('-', $parents_for_id));
       $e['#parents'] = $element['#parents'];
     }
-
-    if($e['#use_ajax']) {
-      
-    }
   }
   else {
     $e = array(
@@ -804,24 +837,101 @@ function _term_reference_tree_build_item(&$element, &$term, &$form_state, &$valu
     );
   }
 
+  $expandname = $term->tid . '-expand';
+  $childrenname = $term->tid . '-children';
+
+  $container[$expandname] = array(
+    '#type' => 'checkbox_tree_expandbutton',
+    '#name' => $element['#name'] . '-' . $term->tid . '-expand',
+    '#leaves_only' => $leaves_only,
+    '#tid' => $term->tid,
+    '#checkbox_tree_element' => $element['#name'],
+    '#depth' => $depth + 1,
+  );
+
   $container[$term->tid] = $e;
 
   if(property_exists($term, 'children') && count($term->children) > 0) {
     $parents = $parent_tids;
     $parents[] = $term->tid;
-    $container[$term->tid . '-children'] = _term_reference_tree_build_level($element, $term, $form_state, $value, $max_choices, $parents, $depth + 1);
+    $container['#has_children'] = 1;
+    $container[$expandname]['#has_children'] = 1;
+    $container[$childrenname] = _term_reference_tree_build_level($element, $term, $form_state, $value, $max_choices, $parents, $depth + 1);
 
-    if(isset($value[$term->tid]) || $container[$term->tid . '-children']['#children_selected']) {
+    if(isset($value[$term->tid]) || $container[$childrenname]['#children_selected']) {
       $container['#children_selected'] = 1;
       $container[$term->tid]['#children_selected'] = 1;
     }
+    elseif($element['#use_ajax']) {
+      $container[$expandname]['#ajax'] = array(
+        'event' => 'click',
+        'callback' => '_term_reference_tree_level_ajax_callback',
+        'wrapper' => $element['#name'] . '-' . $term->tid . '-level-collapsed',
+        'method' => 'replaceWith',
+        'effect' => 'slide',
+      );
+    }    
   }
   else {
+    $container['#has_children'] = 0;
+    $container[$expandname]['#has_children'] = 0;
     if(isset($value[$term->tid])) {
       $container['#children_selected'] = 1;
     }
   }
 
+  # If there are children selected, always expand.
+  if(array_key_exists($expandname, $form_state['values'])) {
+    $expanded = $form_state['values'][$expandname];
+  }
+  else {
+    if($start_minimized && !$container['#children_selected']) {
+      $expanded = 0;
+    }
+    else {
+      $expanded = 1;
+    }
+    #dsm($term->name .":\nchildren selected: " . $container['#children_selected'] . "\nstart minimized: $start_minimized\nexpanded: $expanded\ndepth: $depth");
+  }
+    
+  $container[$expandname]['#value']['expanded'] = $expanded;
+
+  if(array_key_exists($childrenname, $container)) {
+    $container[$childrenname]['#expanded'] = $expanded;
+  }
+
   return $container;
 }
 
+function _term_reference_tree_level_ajax_callback($form, $form_state) {
+  $element =& $form_state['triggering_element'];
+  $tid = $element['tid'];
+  $tree =& $form[$element['#checkbox_tree_element']];
+  $term = taxonomy_term_load($tid);
+  error_log('_term_reference_tree_level_ajax_callback ' . $element['#checkbox_tree_element']);
+  error_log(print_r($tree, TRUE));
+  $term->children = _term_reference_tree_get_term_hierarchy($tid, $tree['#vocabulary'], $tree['#allowed'], $tree['#filter_view'], '');
+  
+  $items = _term_reference_tree_build_level($tree, $term, $form_state, $form_state['values'][$element['#checkbox_tree_element']], 0, array(), $element['#depth'], TRUE);
+
+  error_log(print_r($items, TRUE));
+
+  return $items;
+}
+
+function _term_reference_tree_process_expandbutton($element, &$form_state) {
+  /*
+  if(isset($form_state['triggering_element']) && $form_state['triggering_element']['#name'] == $element['#name']) {
+    #error_log(print_r($form_state['triggering_element'], true));
+    if($form_state['values'][$element['#name']]['expanded'] == 1) {
+      $element['#value']['expanded'] = 0;
+    }
+    else {
+      $element['#value']['expanded'] = 1;
+    }
+    error_log(print_r($form_state['values'][$element['#name']]['expanded'], true));
+    error_log("expanded: " . $form_state['values'][$element['#name']]['expanded'] . " -> " . $element['#value']['expanded']);
+  }
+  */
+  return $element;
+}

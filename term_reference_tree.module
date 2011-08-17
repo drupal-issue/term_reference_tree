@@ -23,6 +23,9 @@ function term_reference_tree_theme() {
     'checkbox_tree_label' => array(
       'render element' => 'element',
     ),
+    'checkbox_tree_expandbutton' => array(
+      'render element' => 'element',
+    ),
     'checkbox_tree_track_list' => array(
       'render element' => 'element',
     ),

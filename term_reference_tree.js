@@ -23,6 +23,7 @@
         checkMaxChoices(tree, $(this));
       });
 
+      /*
       // On page load, check if the start minimized option is selected.  If so,
       // minimize each tree, except for lists that contain a checked box.   
       if($(this).hasClass('term-reference-tree-start-minimized')) {
@@ -36,6 +37,7 @@
           }
         });
       }
+      */
       
       //On page load, check if the user wants a track list. If so, add the 
       //currently selected items to it.

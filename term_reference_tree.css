@@ -31,6 +31,10 @@
   margin-right: 4px;
 }
 
+.term-reference-tree-hidden {
+  display: none;
+}
+
 .term-reference-tree-button {
   background-image: url('images/bullet_toggle_minus.png');
 }
