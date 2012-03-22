@@ -1,4 +1,4 @@
- <?php
+<?php
 
 /**
  * Implements hook_field_formatter_settings_summary().
