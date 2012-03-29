@@ -549,7 +549,7 @@ function term_reference_tree_field_widget_form(&$form, &$form_state, $field, $in
       $element['#cascading_selection'] = $settings['cascading_selection'];
       $element['#track_list'] = $settings['track_list'];
       $element['#parent_tid'] = $settings['parent_term_id'] || $field['settings']['allowed_values'][0]['parent'];
-      $element['#vocabulary'] = $voc->vid;
+      $element['#vocabulary'] = $voc ? $voc->vid : NULL;
       $element['#token_display'] = module_exists('token') ? $settings['token_display'] : '';
       break;
   }
