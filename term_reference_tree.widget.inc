@@ -269,12 +269,45 @@ function _term_reference_tree_cascading_selection_validate($element, &$form_stat
  *   The processed element.
  */
 function term_reference_tree_process_checkbox_tree($element, $form_state) {
+  $path = drupal_get_path('module', 'term_reference_tree');
+  $defaults = array();
+  $defaults['#attached']['js'] = array($path . '/term_reference_tree.js');
+  $defaults['#attached']['css'] = array($path . '/term_reference_tree.css');
+  $defaults['#type'] = 'checkbox_tree';   
+  $defaults['#max_choices'] = 1;
+  $defaults['#max_depth'] = '';
+  $defaults['#start_minimized'] = FALSE;
+  $defaults['#leaves_only'] = FALSE;
+  $defaults['#filter_view'] = '';
+  $defaults['#select_parents'] = FALSE;
+  $defaults['#required'] = FALSE;
+  $defaults['#cascading_selection'] = FALSE;
+  $defaults['#track_list'] = FALSE;
+  $defaults['#parent_tid'] = '';
+  $defaults['#token_display'] = FALSE; 
+  $defaults['#default_value'] = array();
+  $defaults += array(
+    '#value_key' => 'tid',
+    '#element_validate' => array(),
+    '#properties' => array(),
+  );
+  
+  foreach($defaults as $key => $val) {
+    if(!isset($element[$key])) {
+      $element[$key] = $val;
+    }
+  }
+  
+  dsm($element['#default_value']);
+  $element['#default_value'] = _term_reference_tree_flatten_default_value($element['#default_value']);
+  dsm($element['#default_value']);
+  
   if (is_array($form_state)) {
     if (!empty($element['#max_choices']) && $element['#max_choices'] != '-1')
       drupal_add_js(array('term_reference_tree' => array('trees' => array($element['#id'] => array('max_choices'=>$element['#max_choices'])))), 'setting');
     $allowed = '';
     
-    if ($element['#filter_view'] != '') {
+    if (isset($element['#filter_view']) && $element['#filter_view'] != '') {
       $allowed = _term_reference_tree_get_allowed_values($element['#filter_view']);
     }
     
@@ -330,7 +363,7 @@ function term_reference_tree_process_checkbox_tree($element, $form_state) {
  *
  * @ingroup themeable
  */
-function theme_checkbox_tree($variables) {
+function theme_checkbox_tree($variables) {  
   $element = $variables['element'];
   $element['#children'] = drupal_render_children($element);
   
@@ -681,7 +714,6 @@ function _term_reference_tree_build_item(&$element, &$term, &$form_state, &$valu
   );
 
   if (!$element['#leaves_only'] || count($term->children) == 0) {
-    $name = "edit-" . str_replace('_', '-', $element['#field_name']);
     $e = array(
       '#type' => ($max_choices == 1) ? 'radio' : 'checkbox',
       '#title' => $term_name,
@@ -774,4 +806,18 @@ function _term_reference_tree_build_level(&$element, &$term, &$form_state, &$val
   }
   
   return $container;
+}
+
+function _term_reference_tree_flatten_default_value($value) {
+  $result = array();
+  
+  foreach($value as $key => $val) {
+    if(is_array($val)) {
+      $result += _term_reference_tree_flatten_default_value($val);
+    } else {
+      $result[$key] = $val;
+    }
+  }
+  
+  return $result;
 }
